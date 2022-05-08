@@ -1,8 +1,8 @@
-# Download_ftp
+# Download_GFZ_ftp
 
 The function was created to automatize a daily task.
 
-Daily, the brazilian technicians need to download many files from the GFZ ftp server and store them in specific directories.
+Daily, the brazilian technicians need to download many files from the GFZ_potsdam ftp server and store them in specific directories.
 
 The data are from our geomagnetic observatories and stations, that continually measures the geomagnetic field.
 
