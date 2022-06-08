@@ -34,6 +34,7 @@ def p_diff(obs,
     df_tpm = pd.DataFrame()
     days_index = []
     files_with_problems = []
+    list_of_outlier = []
     
     
     # check the existence of previous pillars differences
@@ -116,6 +117,7 @@ def p_diff(obs,
                                  index_col = 'Date')
             
             df_ppm.loc[df_ppm['F'] >= 99999.0, 'F'] = np.nan
+            df_ppm.loc[df_ppm['F'] == 00000.00, 'F'] = np.nan
 
             
             #calculating mean, median and standard deviation between the gsm and ppm files
@@ -123,24 +125,28 @@ def p_diff(obs,
             print(f'***********************************')
             print(f'Calculating statistics for {Date}')
             mean = round((df_gsm['F'] - df_ppm['F'].loc[str(df_gsm.index[0]): str(df_gsm.index[-1])]).dropna().mean(), 2)
-            means.append(mean)
+            
             print(f'\n The mean differences was {mean} nT')
             median = round((df_gsm['F'] - df_ppm['F'].loc[str(df_gsm.index[0]):str(df_gsm.index[-1])]).dropna().median(), 2)
-            medians.append(median)
+            
             print(f'\n The median was {median} nT')
             stds = round((df_gsm['F'] - df_ppm['F'].loc[str(df_gsm.index[0]):str(df_gsm.index[-1])]).dropna().std(),2)
-            std.append(stds)
+            
             print(f'\n The std was {stds} nT \n')
             #day = pd.to_datetime(Date,format= '%Y-%m-%d')
+                
+            means.append(mean)
+            medians.append(median)
+            std.append(stds)
             days_index.append(Date)
             jd = jd2000(Date)
-            
+                
             df_tpm[f'Date'] = [Date]
             df_tpm[f'p{pillar}_mean'] = [mean]
             df_tpm[f'p{pillar}_median'] = [median]
             df_tpm[f'p{pillar}_std'] = [stds]
             df_tpm[f'jd'] = [jd]
-                
+              
             df_pillar = pd.read_csv(f'pillar_differences_{obs}_p{pillar}.txt', sep = '\s+')
 
             if df_pillar.empty == True:
@@ -183,9 +189,9 @@ def p_diff(obs,
         
         print(f'****************************************************************'
               f'\nList of files with problems - GSM files\n')
-        print(*files_with_problems, sep = '\n')   
+        print(*files_with_problems, sep = '\n')
     
-    return days_index,means,medians,std
+    return days_index, means, medians, std
 
 def plot_pdiff(obs,
                pillar,
