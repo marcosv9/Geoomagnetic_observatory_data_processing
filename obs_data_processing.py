@@ -1,5 +1,4 @@
-from cmath import pi
-from re import L
+
 import pandas as pd
 import glob
 from datetime import datetime
@@ -51,24 +50,35 @@ def p_diff(obs,
                                  )
         df_pillar.to_csv(f'pillar_differences_{obs}_p{pillar}.txt', sep = ' ')
   
-   #cheking gsm files existence in the date period 
-    for date in date_period:
-        
-        files_gsm.extend(glob.glob(f'{path_gsm}/{(datetime.strptime(str(date.date()), """%Y-%m-%d""").strftime(""""%Y%m%d"""))[3::]}*'))
-        files_gsm.sort()
+   #cheking gsm files existence in the date period   
     
+    for date in date_period:
+        if obs.upper() in ['TTB0', 'TTB1']:
+            
+            files_gsm.extend(glob.glob(f'{path_gsm}/{(datetime.strptime(str(date.date()), """%Y-%m-%d""").strftime(""""%Y%m%d"""))[3::]}*'))
+            files_gsm.sort()
+            
+        if obs.upper() in ['VSS0', 'VSS1']:
+            
+            files_gsm.extend(glob.glob(f'{path_gsm}/{date.date().strftime("""%Y%m%d""")}*'))
+            files_gsm.sort()
+
    #creating list of dates only with gsm files existence.     
     for i in range(len(files_gsm)):
         
-        gsm_date = datetime.strptime(os.path.basename(files_gsm[i])[0:6], '%y%m%d').strftime('%Y%m%d')
-        days_with_files.append(gsm_date)
-    
+        if obs.upper() in ['TTB0', 'TTB1']:
+            
+            gsm_date = datetime.strptime(os.path.basename(files_gsm[i])[0:6], '%y%m%d').strftime('%Y%m%d')
+            days_with_files.append(gsm_date)
+            
+        if obs.upper() in ['VSS0', 'VSS1']:
+            gsm_date = datetime.strptime(os.path.basename(files_gsm[i])[0:8], '%Y%m%d').strftime('%Y%m%d')
+            days_with_files.append(gsm_date)
     
     # cheking for ppm files in the days with gsm files.
     for i in days_with_files:
         files_ppm.extend(glob.glob(f'O:/jmat/{obs}/{obs}_{str(i)}.ppm'))
         files_ppm.sort()
-    
     #creating list of dates only with ppm files existence.    
     for i in range(len(files_ppm)):
         
@@ -77,7 +87,7 @@ def p_diff(obs,
         
     #cheking if the days with gsm files are the same as the days with ppm files
     #if they are different then, ppm days will be considered.
-    
+
     if len(real_days) != len(days_with_files):
         
         files_gsm = []
@@ -87,11 +97,9 @@ def p_diff(obs,
         
             files_gsm.extend(glob.glob(f'{path_gsm}/{date[2::]}*'))
             files_gsm.sort()
-        
-        
-        
+       
     for file_g, file_p, date in zip(files_gsm, files_ppm, days_with_files):
-        
+
         try:
             df_gsm = pd.read_csv(file_g,
                                  header = None,
@@ -102,12 +110,20 @@ def p_diff(obs,
                                  index_col = 'time')
         
             Date = datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
-            Time = pd.date_range(Date + ' ' + str(df_gsm.index[0]).zfill(8),
-                                 Date + ' ' + str(df_gsm.index[-1]).zfill(8), 
-                                 freq = '3s')
+            
+            if obs.upper() in ['TTB0', 'TTB1']:
+                
+                Time = pd.date_range(Date + ' ' + str(df_gsm.index[0]).zfill(8),
+                                     Date + ' ' + str(df_gsm.index[-1]).zfill(8), 
+                                     freq = '3s')
+            if obs.upper() in ['VSS0', 'VSS1']:
+                
+                Time = pd.date_range(Date + ' ' + str(df_gsm.index[0]).zfill(8),
+                                     Date + ' ' + str(df_gsm.index[-1]).zfill(8), 
+                                     freq = '5s')                
             df_gsm.index = Time
             #df.pop('Time')
-            
+
             df_ppm = pd.read_csv(file_p,
                                  header = None,
                                  sep = '\s+',
@@ -119,7 +135,6 @@ def p_diff(obs,
             df_ppm.loc[df_ppm['F'] >= 99999.0, 'F'] = np.nan
             df_ppm.loc[df_ppm['F'] == 00000.00, 'F'] = np.nan
 
-            
             #calculating mean, median and standard deviation between the gsm and ppm files
             
             print(f'***********************************')
@@ -200,7 +215,7 @@ def plot_pdiff(obs,
                lr:bool = False
                ):
     
-    path = f'Geoomagnetic_observatory_data_processing/pillar_differences_{obs}_p{pillar}.txt'
+    path = f'pillar_differences_{obs}_p{str(pillar)}.txt'
          
     df_obs = pd.read_csv(path, sep = '\s+', index_col= [0])
 
@@ -355,3 +370,22 @@ def linear_regression(x, y):
     prediction = model.predict(x_train)
     
     return prediction, model
+
+
+if __name__ == '__main__':
+
+#calculate pillar differences
+    #p_diff(obs = 'VSS0',
+    #       starttime = '2020-02-01',
+    #       endtime = '2020-12-31',
+    #       path_gsm = 'O:/jmat/gsmfiles/VSS/2020',
+    #       pillar = 1)
+
+#plot pillar differences
+
+    plot_pdiff(obs = 'VSS0',
+               pillar = 1,
+               starttime = '2020-01-01',
+               endtime = '2020-12-31',
+               lr = False
+               )
