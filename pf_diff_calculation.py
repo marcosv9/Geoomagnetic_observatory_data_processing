@@ -164,18 +164,18 @@ def p_diff(obs: str,
             df_tpm[f'p{pillar}_std'] = [stds]
             df_tpm[f'jd'] = [jd]
               
-            df_pillar = pd.read_csv(f'pillar_differences_{obs}_p{pillar}.txt', sep = '\s+')
+            df_pillar = pd.read_csv(f'outputs/pillar_differences_{obs}_p{pillar}.txt', sep = '\s+')
 
             if df_pillar.empty == True:
                 
                 df_tpm.set_index('Date', inplace=True)
-                df_tpm.sort_index().to_csv(f'pillar_differences_{obs}_p{pillar}.txt', sep = ' ')
+                df_tpm.sort_index().to_csv(f'outputs/pillar_differences_{obs}_p{pillar}.txt', sep = ' ')
             else:
                 
                 df_pillar = pd.concat([df_pillar, df_tpm], ignore_index = True)
                 df_pillar.set_index('Date', inplace = True)
                 df_pillar = df_pillar[~df_pillar.index.duplicated(keep='last')]
-                df_pillar.sort_index().to_csv(f'pillar_differences_{obs}_p{pillar}.txt', sep = ' ')
+                df_pillar.sort_index().to_csv(f'outputs/pillar_differences_{obs}_p{pillar}.txt', sep = ' ')
             
             
         except:
@@ -199,7 +199,7 @@ def p_diff(obs: str,
     plt.plot(days_index, means, 'o', color = 'red', label = 'New measurements')
     plt.legend()
     
-    plt.savefig(f'pillar_differences_{obs}_p{pillar}.png', dpi = 300)
+    plt.savefig(f'outputs/pillar_differences_{obs}_p{pillar}.png', dpi = 300)
     plt.show()
     
     if len(files_with_problems) > 0:
