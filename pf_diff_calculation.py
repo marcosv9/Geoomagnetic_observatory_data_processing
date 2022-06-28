@@ -1,5 +1,3 @@
-
-
 import pandas as pd
 import glob
 from datetime import datetime
@@ -9,10 +7,10 @@ import os
 from sklearn.linear_model import LinearRegression
 
 
-def p_diff(obs,
-           starttime,
-           endtime,
-           path_gsm,
+def p_diff(obs: str,
+           starttime: str,
+           endtime: str,
+           path_gsm: str,
            pillar:int = 1
            ):
     
@@ -21,7 +19,7 @@ def p_diff(obs,
     date_period = pd.date_range(starttime,
                                 endtime,
                                 freq = 'D'
-                                )
+                               )
     
     
     days_with_files = []
@@ -212,11 +210,12 @@ def p_diff(obs,
     
     return days_index, means, medians, std
 
-def plot_pdiff(obs,
-               pillar,
+def plot_pdiff(obs: str,
+               pillar: str,
                starttime = None,
                endtime = None,
-               lr:bool = False
+               lr_start = None,
+               lr_end = None
                ):
     
     path = f'pillar_differences_{obs}_p{str(pillar)}.txt'
@@ -225,6 +224,13 @@ def plot_pdiff(obs,
 
     df_obs.index = pd.to_datetime(df_obs.index, format = '%Y-%m-%d')
     
+    if lr_start != None and lr_end != None:
+        lr = True
+        prediction, model = linear_regression(df_obs[lr_start:lr_end]['jd'],
+                                              df_obs[lr_start:lr_end][f'p{pillar}_mean']
+                                              )
+    else:
+        lr = False
     
     if starttime == None and endtime == None and lr == False:
         
@@ -250,8 +256,6 @@ def plot_pdiff(obs,
     
     if starttime == None and endtime == None and lr == True:
         
-        prediction, model = linear_regression(df_obs['jd'], df_obs[f'p{pillar}_mean'])
-        
         print('****************************************************************')
         print('Pillar differences statistics for the period')
         print('The maximum difference is:', round(df_obs[f'p{pillar}_mean'].max(),3))
@@ -261,15 +265,15 @@ def plot_pdiff(obs,
         print('The STD is:', round(df_obs[f'p{pillar}_mean'].std(),3))      
         print('****************************************************************')
         print('Linear Regression')
-        print(print(f'y = {round((model.coef_),6)}x {round((model.intercept_),3)}'))
+        print(f'y = {round(float(model.coef_),6)}x {round(float(model.intercept_),3)}')
         
         fig, ax = plt.subplots(figsize=(18,5)) 
-        ax.plot(df_obs['jd'],
+        ax.plot(df_obs.index,
                 df_obs[f'p{pillar}_mean'],
                 'or',
                 markersize = 5,
                 label = f'p{pillar}_mean')
-        ax.plot(df_obs['jd'],
+        ax.plot(df_obs.loc[lr_start:lr_end].index,
                 prediction,
                 label = f'linear regression')
 
@@ -304,8 +308,6 @@ def plot_pdiff(obs,
         
     if starttime != None and endtime != None and lr == True:
         
-        prediction, model = linear_regression(df_obs[starttime:endtime]['jd'], df_obs[starttime:endtime][f'p{pillar}_mean'])
-        
         print('****************************************************************')
         print('Pillar differences statistics for the period')        
         print('The maximum difference is:', round(df_obs[f'p{pillar}_mean'][starttime:endtime].max(),3))
@@ -315,17 +317,17 @@ def plot_pdiff(obs,
         print('The STD is:', round(df_obs[f'p{pillar}_mean'][starttime:endtime].std(),3))        
         print('****************************************************************')
         print('Linear Regression')
-        print(print(f'y = {round(float(model.coef_),6)}x {round(float(model.intercept_),3)}'))  
+        print(f'y = {round(float(model.coef_),6)}x {round(float(model.intercept_),3)}')
         
         fig, ax = plt.subplots(figsize=(18,5)) 
 
-        ax.plot(df_obs[starttime:endtime]['jd'],
+        ax.plot(df_obs[starttime:endtime].index,
                 df_obs[f'p{pillar}_mean'][starttime:endtime],
                 'or',
                 markersize = 5,
                 label = f'p{pillar}_mean')
         
-        ax.plot(df_obs[starttime:endtime]['jd'],
+        ax.plot(df_obs[lr_start:lr_end].index,
                 prediction,
                 label = f'Linear Regression')
         
@@ -379,8 +381,9 @@ if __name__ == '__main__':
 #plot pillar differences
 
     plot_pdiff(obs = 'TTB0',
-               pillar = '2',
-               starttime = '2022-04-09',
-               endtime = '2022-06-15',
-               lr = True
+               pillar = '1',
+               starttime = None,
+               endtime = None,
+               lr_start= '2021-06-01',
+               lr_end = '2021-08-30'
                )
