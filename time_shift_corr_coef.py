@@ -107,7 +107,7 @@ def time_shift_corre_coef(obs:str,
         #df_sec['F_calc'] = F_calc
         
         df_coef = pd.DataFrame()
-        coef_list = [[],[]]
+        coef_list = [[],[],[]]
         
         print(f'shifting the data to find the best adjust for {date}')
         
@@ -122,11 +122,13 @@ def time_shift_corre_coef(obs:str,
                 
             coef_list[0].append(coef)
             coef_list[1].append(str(timedelta(seconds=float(i))))
+            coef_list[2].append(i)
             
         #dataframe with the list of coefficients coefficients, shift_time and date
         df_coef['coef'] = coef_list[0]
         df_coef['Shift-Time'] = coef_list[1]
         df_coef['Date'] = date
+        df_coef['Time-seconds'] = coef_list[2]  
         
         #creating the output file with only the maximum correlation coefficient for each day
         df_corr = pd.concat([df_corr,df_coef.loc[df_coef['coef'] ==  df_coef['coef'].max()]])
