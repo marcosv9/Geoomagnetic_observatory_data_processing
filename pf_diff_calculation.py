@@ -218,7 +218,7 @@ def plot_pdiff(obs: str,
                lr_end = None
                ):
     
-    path = f'pillar_differences_{obs}_p{str(pillar)}.txt'
+    path = f'outputs/pillar_differences_{obs}_p{str(pillar)}.txt'
          
     df_obs = pd.read_csv(path, sep = '\s+', index_col= [0])
 
@@ -372,11 +372,11 @@ def linear_regression(x, y):
 if __name__ == '__main__':
 
 #calculate pillar differences
-    #p_diff(obs = 'VSS0',
-    #       starttime = '2022-01-01',
-    #       endtime = '2022-06-30',
-    #       path_gsm = 'O:/jmat/gsmfiles/VSS/2022/Pilar ex2',
-    #       pillar = 'ex2')
+    #p_diff(obs = 'TTB0',
+    #       starttime = '2022-06-16',
+    #       endtime = '2022-07-14',
+    #       path_gsm = 'O:/jmat/gsmfiles/TTB/2022/Pilar 1',
+    #       pillar = 1)
 
 #plot pillar differences
 
@@ -384,6 +384,6 @@ if __name__ == '__main__':
                pillar = '1',
                starttime = None,
                endtime = None,
-               lr_start= '2021-06-01',
-               lr_end = '2021-08-30'
+               lr_start= None,
+               lr_end = None
                )

@@ -1,9 +1,10 @@
+from itertools import repeat
 import pandas as pd
 import numpy as np
 from datetime import timedelta
 from spacepy import pycdf
 import chaosmagpy as cp
-import os
+
 
 
 
@@ -13,19 +14,36 @@ def time_shift_corre_coef_cdf(obs:str,
                               window_start: int,
                               window_end: int,
                               step: int = 1,
-                              shift_direction: str = 'backward'
-                            ):
+                              shift_direction: str = 'backward',
+                              filetype: str = 'sec'
+                             ):
+    '''
+    Write docstring
     
+    Developed by Marcos Vinicius Silva
+    
+    Github: https://github.com/marcosv9
+    
+    '''
     obs = obs.upper()
     
-    if obs[0:3] not in ['MAA', 'TTB', 'VSS']:
-        print(f'obs must be VSS, MAA or TTB')
+    obs_list = ['MAA0', 'VSS0', 'VSS1',
+                'VSS2', 'TTB0', 'TTB1']
+    
+    assert filetype in ['sec','ppm'], 'filetype must be sec or ppm'
+    
+    assert obs in obs_list, 'Invalid observatory code'
         
-    if shift_direction not in ['backward', 'forward']:
-        print(f'shift_direction must be forward or backward')    
+    assert shift_direction in ['backward', 'forward'], 'shift_direction must be forward or backward'    
 
     df_corr = pd.DataFrame()
+    
     window_size = np.arange(window_start, window_end, step)
+    
+    if shift_direction == 'backward':
+        time_signal = '-'
+    else:
+        time_signal = '+'
         
     #setting path to the files
     
@@ -81,17 +99,20 @@ def time_shift_corre_coef_cdf(obs:str,
                         
                     
                 coef_list[0].append(coef)
-                coef_list[1].append(str(timedelta(seconds=float(i))))
-                coef_list[2].append(i)
+                coef_list[1].append(f'{time_signal}{str(timedelta(seconds=float(i)))}')
+                coef_list[2].append(int(f'{time_signal}{i}'))
   
             #dataframe with the list of coefficients coefficients, shift_time and date
             df_coef['coef'] = coef_list[0]
-            df_coef['Shift-Time'] = coef_list[1]
+            df_coef['Shift-Time (hh:mm:ss)'] = coef_list[1]
             df_coef['Date'] = date
-            df_coef['Time-seconds'] = coef_list[2]  
+            df_coef['Shift-Time (s)'] = coef_list[2]  
+            df_coef['filetype'] = filetype
             
             #creating the output file with only the maximum correlation coefficient for each day
+            
             df_corr = pd.concat([df_corr,df_coef.loc[df_coef['coef'] ==  df_coef['coef'].max()]])
+            
         except:
             print(f'No CDF file found for {date}') 
                  
@@ -100,10 +121,13 @@ def time_shift_corre_coef_cdf(obs:str,
 
 if __name__ == '__main__':
     RMS = time_shift_corre_coef_cdf(obs = 'MAA0',
-                                    start_date= '2021-04-01',
-                                    end_date = '2021-05-15',
+                                    start_date= '2021-05-16',
+                                    end_date = '2021-05-20',
                                     window_start=14000,
                                     window_end=18000,
                                     step = 1,
-                                    shift_direction = 'backward'
+                                    shift_direction = 'backward',
+                                    filetype= 'sec'
                                     )
+    print(RMS)
+    

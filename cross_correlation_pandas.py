@@ -4,10 +4,7 @@ from datetime import timedelta
 import numpy as np
 
 def cross_correlation_computation(x, y):
-    
 
-    
-    
     #if len(x) < len(y):
     #    
     #    y = y.reindex(x.index)

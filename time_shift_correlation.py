@@ -15,8 +15,11 @@ def time_shift_obs_correlation(obs:str,
                                ):
     
     obs = obs.upper()
-    if obs not in ['MAA0', 'TTB0']:
-        print(f'obs must be MAA or TTB')
+    
+    obs_list = ['MAA0', 'VSS0', 'VSS1',
+                'VSS2', 'TTB0', 'TTB1']
+    
+    assert obs in obs_list, 'Invalid observatory code'
         
     files_sec = []
     files_ppm = []
