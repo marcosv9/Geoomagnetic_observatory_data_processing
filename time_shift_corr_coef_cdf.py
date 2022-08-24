@@ -121,12 +121,12 @@ def time_shift_corre_coef_cdf(obs:str,
 
 if __name__ == '__main__':
     RMS = time_shift_corre_coef_cdf(obs = 'MAA0',
-                                    start_date= '2021-05-16',
-                                    end_date = '2021-05-20',
-                                    window_start=14000,
-                                    window_end=18000,
+                                    start_date= '2021-04-21',
+                                    end_date = '2021-04-24',
+                                    window_start=15000,
+                                    window_end=19000,
                                     step = 1,
-                                    shift_direction = 'backward',
+                                    shift_direction = 'forward',
                                     filetype= 'sec'
                                     )
     print(RMS)

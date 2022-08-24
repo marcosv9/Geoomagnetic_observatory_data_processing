@@ -1,4 +1,3 @@
-from asyncore import read
 from read_ppm import read_ppm
 from read_sec import read_sec
 import pandas as pd
@@ -114,6 +113,6 @@ def time_shift_correction(obs: str,
                 
 if __name__ == '__main__':
     time_shift_correction(obs = 'MAA0',
-                          start_date =  '2021-05-16',
-                          end_date = '2021-05-16',
+                          start_date =  '2021-04-28',
+                          end_date = '2021-04-30',
                           filetype = 'sec')        

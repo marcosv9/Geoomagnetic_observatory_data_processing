@@ -140,9 +140,9 @@ def time_shift_obs(obs:str,
 
 if __name__ == '__main__':
     RMS = time_shift_obs(obs = 'MAA0',
-                   start_date= '2021-04-10',
-                   end_date = '2021-04-10',
-                   window_start=14000,
-                   window_end=18000,
-                   step = 1
-                  )
+                         start_date= '2021-03-25',
+                         end_date = '2021-03-27',
+                         window_start=14000,
+                         window_end=18000,
+                         step = 1
+                        )

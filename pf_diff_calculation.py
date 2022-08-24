@@ -185,7 +185,7 @@ def p_diff(obs: str,
             pass
     
         
-    df_pillar = pd.read_csv(f'pillar_differences_{obs}_p{pillar}.txt', sep = '\s+')
+    df_pillar = pd.read_csv(f'outputs/pillar_differences_{obs}_p{pillar}.txt', sep = '\s+')
     df_pillar.set_index('Date',inplace = True)
     df_pillar.index = pd.to_datetime(df_pillar.index, format = '%Y-%m-%d')
     
@@ -199,7 +199,7 @@ def p_diff(obs: str,
     plt.plot(days_index, means, 'o', color = 'red', label = 'New measurements')
     plt.legend()
     
-    plt.savefig(f'outputs/pillar_differences_{obs}_p{pillar}.png', dpi = 300)
+    plt.savefig(f'outputs/pillar_differences_{obs}_p{pillar}.jpeg', dpi = 300)
     plt.show()
     
     if len(files_with_problems) > 0:
@@ -215,7 +215,8 @@ def plot_pdiff(obs: str,
                starttime = None,
                endtime = None,
                lr_start = None,
-               lr_end = None
+               lr_end = None,
+               plot_uncertainties:bool = False
                ):
     
     path = f'outputs/pillar_differences_{obs}_p{str(pillar)}.txt'
@@ -244,7 +245,11 @@ def plot_pdiff(obs: str,
     
         fig, ax = plt.subplots(figsize=(18,5)) 
         
-        ax.plot(df_obs[f'p{pillar}_mean'], 'or',markersize = 5, label = f'p{pillar}_mean')
+        if plot_uncertainties == False:
+            ax.plot(df_obs[f'p{pillar}_mean'], 'or',markersize = 5, label = f'p{pillar}_mean')
+        else:
+            ax.errorbar(df_obs.index, df_obs[f'p{pillar}_mean'], yerr=df_obs[f'p{pillar}_std'], fmt='.r', markersize = 10,label = f'p{pillar}_mean')
+        
         ax.set_ylabel('Differences(nT)', fontsize = 14)
         ax.set_xlabel('Time', fontsize = 14)
         ax.set_ylim(1.05*df_obs[f'p{pillar}_mean'].min(),0.95*df_obs[f'p{pillar}_mean'].max())
@@ -268,11 +273,20 @@ def plot_pdiff(obs: str,
         print(f'y = {round(float(model.coef_),6)}x {round(float(model.intercept_),3)}')
         
         fig, ax = plt.subplots(figsize=(18,5)) 
-        ax.plot(df_obs.index,
-                df_obs[f'p{pillar}_mean'],
-                'or',
-                markersize = 5,
-                label = f'p{pillar}_mean')
+        
+        if plot_uncertainties == False:
+            ax.plot(df_obs.index,
+                    df_obs[f'p{pillar}_mean'],
+                    'or',
+                    markersize = 5,
+                    label = f'p{pillar}_mean')
+        else:
+            ax.errorbar(df_obs.index,
+                        df_obs[f'p{pillar}_mean'],
+                        yerr=df_obs[f'p{pillar}_std'],
+                        fmt='.r',
+                        elinewidth=2,
+                        markersize = 8,label = f'p{pillar}_mean')
         ax.plot(df_obs.loc[lr_start:lr_end].index,
                 prediction,
                 label = f'linear regression')
@@ -296,7 +310,16 @@ def plot_pdiff(obs: str,
         print('The STD is:', round(df_obs[f'p{pillar}_mean'][starttime:endtime].std(),3))
       
         fig, ax = plt.subplots(figsize=(18,5)) 
-        ax.plot(df_obs[f'p{pillar}_mean'][starttime:endtime], 'or',markersize = 5, label = f'p{pillar}_mean')
+        
+        if plot_uncertainties == False:
+            ax.plot(df_obs[f'p{pillar}_mean'][starttime:endtime], 'or',markersize = 5, label = f'p{pillar}_mean')
+        else:
+            ax.errorbar(df_obs[starttime:endtime].index,
+                        df_obs[f'p{pillar}_mean'][starttime:endtime],
+                        yerr=df_obs[f'p{pillar}_std'][starttime:endtime],
+                        fmt='.r',
+                        markersize = 5,
+                        label = f'p{pillar}_mean')
         ax.set_ylabel('Differences(nT)', fontsize = 14)
         ax.set_ylim(1.05*df_obs[f'p{pillar}_mean'][starttime:endtime].min(),0.95*df_obs[f'p{pillar}_mean'][starttime:endtime].max())
         ax.set_xlabel('Time', fontsize = 14)
@@ -321,11 +344,19 @@ def plot_pdiff(obs: str,
         
         fig, ax = plt.subplots(figsize=(18,5)) 
 
-        ax.plot(df_obs[starttime:endtime].index,
-                df_obs[f'p{pillar}_mean'][starttime:endtime],
-                'or',
-                markersize = 5,
-                label = f'p{pillar}_mean')
+        if plot_uncertainties == False:
+            ax.plot(df_obs[starttime:endtime].index,
+                    df_obs[f'p{pillar}_mean'][starttime:endtime],
+                    'or',
+                    markersize = 5,
+                    label = f'p{pillar}_mean')
+        else:
+            ax.errorbar(df_obs[starttime:endtime].index,
+                        df_obs[f'p{pillar}_mean'][starttime:endtime],
+                        yerr=df_obs[f'p{pillar}_std'][starttime:endtime],
+                        fmt='.r',
+                        markersize = 5,
+                        label = f'p{pillar}_mean')
         
         ax.plot(df_obs[lr_start:lr_end].index,
                 prediction,
@@ -373,17 +404,18 @@ if __name__ == '__main__':
 
 #calculate pillar differences
     #p_diff(obs = 'TTB0',
-    #       starttime = '2022-06-16',
-    #       endtime = '2022-07-14',
-    #       path_gsm = 'O:/jmat/gsmfiles/TTB/2022/Pilar 1',
-    #       pillar = 1)
+    #       starttime = '2020-01-01',
+    #       endtime = '2020-12-31',
+    #       path_gsm = 'O:/jmat/gsmfiles/TTB/2020/Pillar_2',
+    #       pillar = 2)
 
 #plot pillar differences
 
     plot_pdiff(obs = 'TTB0',
-               pillar = '1',
+               pillar = 2,
                starttime = None,
                endtime = None,
                lr_start= None,
-               lr_end = None
+               lr_end = None,
+               plot_uncertainties=False
                )
