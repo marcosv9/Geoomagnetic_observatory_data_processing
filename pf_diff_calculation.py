@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from sklearn.linear_model import LinearRegression
+from spacepy import pycdf
+import chaosmagpy as cp
 
 
 def p_diff(obs: str,
@@ -38,7 +40,7 @@ def p_diff(obs: str,
     # check the existence of previous pillars differences
     # if not exists a new one will be created.
     try:
-        df_pillar = pd.read_csv(f'pillar_differences_{obs}_p{pillar}.txt', sep = '\s+')
+        df_pillar = pd.read_csv(f'outputs/pillar_differences_{obs}_p{pillar}.txt', sep = '\s+')
     except:
         df_pillar = pd.DataFrame(columns= [f'Date',
                                            f'p{pillar}_mean',
@@ -47,7 +49,7 @@ def p_diff(obs: str,
                                            f'jd'
                                            ]
                                  )
-        df_pillar.to_csv(f'pillar_differences_{obs}_p{pillar}.txt', sep = ' ')
+        df_pillar.to_csv(f'outputs/pillar_differences_{obs}_p{pillar}.txt', sep = ' ')
   
    #cheking gsm files existence in the date period   
     
@@ -61,7 +63,7 @@ def p_diff(obs: str,
             
             files_gsm.extend(glob.glob(f'{path_gsm}/{date.date().strftime("""%Y%m%d""")}*'))
             files_gsm.sort()
-
+    
    #creating list of dates only with gsm files existence.     
     for i in range(len(files_gsm)):
         
@@ -78,6 +80,7 @@ def p_diff(obs: str,
     for i in days_with_files:
         files_ppm.extend(glob.glob(f'O:/jmat/{obs}/{obs}_{str(i)}.ppm'))
         files_ppm.sort()
+    print(files_ppm)
     #creating list of dates only with ppm files existence.    
     for i in range(len(files_ppm)):
         
@@ -126,28 +129,41 @@ def p_diff(obs: str,
             df_gsm.index = Time
             #df.pop('Time')
 
-            df_ppm = pd.read_csv(file_p,
-                                 header = None,
-                                 sep = '\s+',
-                                 usecols = [1, 2, 3],
-                                 names=['date', 'Time', 'F'],
-                                 parse_dates = {'Date': ['date', 'Time']},
-                                 index_col = 'Date')
+            #df_ppm = pd.read_csv(file_p,
+            #                     header = None,
+            #                     sep = '\s+',
+            #                     usecols = [1, 2, 3],
+            #                     names=['date', 'Time', 'F'],
+            #                     parse_dates = {'Date': ['date', 'Time']},
+            #                     index_col = 'Date')
             
-            df_ppm.loc[df_ppm['F'] >= 99999.0, 'F'] = np.nan
-            df_ppm.loc[df_ppm['F'] == 00000.00, 'F'] = np.nan
+            df_ppm = pd.DataFrame()
+            data = pycdf.CDF(f'O:/jmat/{obs}/cdf/{obs}_{date}.cdf')
+            #df_cdf['F_calc'] = np.sqrt((data['HNvar'][:] + data['H0'][1])**2 + (data['HEvar'][:])**2 + (data['Zvar'][:] + data['Z0'][1])**2 )
+            df_ppm['Fsc'] = data['Fsc'][:]
+            
+            #df_cdf['HNvar'] = data['HNvar'][:]
+            #df_cdf['Zvar'] = data['Zvar'][:]
+            #df_cdf['HEvar'] = data['HEvar'][:]
+            # [Htot] used in TTB and MAA
+            #df_cdf['Htot'] = data['HNvar'][:] + data['H0'][1]
+            df_ppm.index = pd.to_datetime(cp.data_utils.timestamp(data['time'][:]))
+            data.close()
+            
+            df_ppm.loc[df_ppm['Fsc'] >= 99999.0, 'Fsc'] = np.nan
+            df_ppm.loc[df_ppm['Fsc'] == 00000.00, 'Fsc'] = np.nan
 
             #calculating mean, median and standard deviation between the gsm and ppm files
             
             print(f'***********************************')
             print(f'Calculating statistics for {Date}')
-            mean = round((df_gsm['F'] - df_ppm['F'].loc[str(df_gsm.index[0]): str(df_gsm.index[-1])]).dropna().mean(), 2)
+            mean = round((df_gsm['F'] - df_ppm['Fsc'].loc[str(df_gsm.index[0]): str(df_gsm.index[-1])]).dropna().mean(), 2)
             
             print(f'\n The mean differences was {mean} nT')
-            median = round((df_gsm['F'] - df_ppm['F'].loc[str(df_gsm.index[0]):str(df_gsm.index[-1])]).dropna().median(), 2)
+            median = round((df_gsm['F'] - df_ppm['Fsc'].loc[str(df_gsm.index[0]):str(df_gsm.index[-1])]).dropna().median(), 2)
             
             print(f'\n The median was {median} nT')
-            stds = round((df_gsm['F'] - df_ppm['F'].loc[str(df_gsm.index[0]):str(df_gsm.index[-1])]).dropna().std(),2)
+            stds = round((df_gsm['F'] - df_ppm['Fsc'].loc[str(df_gsm.index[0]):str(df_gsm.index[-1])]).dropna().std(),2)
             
             print(f'\n The std was {stds} nT \n')
             #day = pd.to_datetime(Date,format= '%Y-%m-%d')
@@ -404,18 +420,18 @@ if __name__ == '__main__':
 
 #calculate pillar differences
     #p_diff(obs = 'TTB0',
-    #       starttime = '2020-01-01',
-    #       endtime = '2020-12-31',
-    #       path_gsm = 'O:/jmat/gsmfiles/TTB/2020/Pillar_2',
-    #       pillar = 2)
+    #       starttime = '2021-01-01',
+    #       endtime = '2021-01-31',
+    #       path_gsm = 'O:/jmat/gsmfiles/TTB/2021/Pilar 1',
+    #       pillar = 1)
 
 #plot pillar differences
 
     plot_pdiff(obs = 'TTB0',
-               pillar = 2,
+               pillar = 1,
                starttime = None,
                endtime = None,
-               lr_start= None,
+               lr_start = None,
                lr_end = None,
-               plot_uncertainties=False
+               plot_uncertainties = False
                )

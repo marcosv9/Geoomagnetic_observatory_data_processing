@@ -60,7 +60,7 @@ def time_shift_corre_coef_cdf(obs:str,
             data = pycdf.CDF(f'{path}/{obs}_{date}.cdf')
             
             df_cdf = pd.DataFrame()
-            df_cdf['F_calc'] = np.sqrt((data['HNvar'][:] + data['H0'][1])**2 + (data['HEvar'][:] + data['D0'][1])**2 + (data['Zvar'][:] + data['Z0'][1])**2 )
+            df_cdf['F_calc'] = np.sqrt((data['HNvar'][:] + data['H0'][1])**2 + (data['HEvar'][:])**2 + (data['Zvar'][:] + data['Z0'][1])**2 )
             df_cdf['Fsc'] = data['Fsc'][:]
             df_cdf['HNvar'] = data['HNvar'][:]
             df_cdf['Zvar'] = data['Zvar'][:]
