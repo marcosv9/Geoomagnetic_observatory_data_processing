@@ -25,7 +25,7 @@ def time_shift_correction(obs: str,
     files_path = []
     dates = []
     
-    shift_data_path = f'outputs/{obs}_shift.txt'
+    shift_data_path = f'outputs//{obs}_shift.txt'
     
     
     date_range_file_format = pd.date_range(start_date,
@@ -113,6 +113,6 @@ def time_shift_correction(obs: str,
                 
 if __name__ == '__main__':
     time_shift_correction(obs = 'MAA0',
-                          start_date =  '2021-04-28',
-                          end_date = '2021-04-30',
+                          start_date =  '2021-05-20',
+                          end_date = '2021-05-20',
                           filetype = 'sec')        

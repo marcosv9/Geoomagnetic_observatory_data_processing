@@ -111,7 +111,7 @@ def time_shift_corre_coef_cdf(obs:str,
             
             #creating the output file with only the maximum correlation coefficient for each day
             
-            df_corr = pd.concat([df_corr,df_coef.loc[df_coef['coef'] ==  df_coef['coef'].max()]])
+            df_corr = pd.concat([df_corr, df_coef.loc[df_coef['coef'] ==  df_coef['coef'].max()]])
             
         except:
             print(f'No CDF file found for {date}') 
@@ -121,13 +121,15 @@ def time_shift_corre_coef_cdf(obs:str,
 
 if __name__ == '__main__':
     RMS = time_shift_corre_coef_cdf(obs = 'MAA0',
-                                    start_date= '2021-04-21',
-                                    end_date = '2021-04-24',
-                                    window_start=15000,
-                                    window_end=19000,
+                                    start_date= '2021-09-01',
+                                    end_date = '2021-09-18',
+                                    window_start=35000,
+                                    window_end=44000,
                                     step = 1,
-                                    shift_direction = 'forward',
+                                    shift_direction = 'backward',
                                     filetype= 'sec'
                                     )
+                                    #window_start=35000,
+                                    #window_end=42000,
     print(RMS)
     
