@@ -37,6 +37,12 @@ def get_realtime_dst(save_files:bool = False,
     
     '''
 
+    #asserting if inputs are boolean (True or False)
+    
+    assert isinstance(save_files, (bool)), 'save_files must be True or False'
+    
+    assert isinstance(save_plots, (bool)), 'save_plots must be True or False'
+    
     current_month = requests.get('https://wdc.kugi.kyoto-u.ac.jp/dst_realtime/presentmonth/index.html').text
 
     last_month = requests.get('https://wdc.kugi.kyoto-u.ac.jp/dst_realtime/lastmonth/index.html').text
@@ -48,7 +54,8 @@ def get_realtime_dst(save_files:bool = False,
     days_in_month = monthrange(today.year, today.month)[1]
     
     
-    soup = BeautifulSoup(url,'lxml')
+    soup = BeautifulSoup(url,"html.parser")
+    #soup = BeautifulSoup(url,"lxml")
     data = soup.find('pre', class_='data').get_text()
     
     with open(r'dst_'+ str(today.year) + '_' + str(today.month) + '_realtime.txt', 'w') as fp:
@@ -97,7 +104,7 @@ def get_realtime_dst(save_files:bool = False,
     lastmonth_date = datetime.datetime.today().date() + to_offset('-1M')
     days_in_last_month = monthrange(lastmonth_date.year, lastmonth_date.month)[1]
     
-    soup = BeautifulSoup(url,'lxml')
+    soup = BeautifulSoup(url,'html.parser')
     data = soup.find('pre', class_='data').get_text()
     
     with open(r'dst_'+ str(lastmonth_date.year) + '_' + str(lastmonth_date.month) + '_lastmonth.txt', 'w') as fp:
@@ -161,6 +168,8 @@ def get_realtime_dst(save_files:bool = False,
     plt.title('Dst Real-Time')
     plt.xlabel('Date')
     plt.ylabel('nT')
+    plt.axhline(-50, ls =  '--')
+    plt.grid(alpha = 0.3)
     plt.legend()
      
     if save_plots == True:
@@ -176,4 +185,4 @@ def get_realtime_dst(save_files:bool = False,
     
     return df_dst_current
 if __name__ == '__main__':
-    df = get_realtime_dst(save_plots=False, save_files = False)
+    df = get_realtime_dst(save_plots = False, save_files = False)
