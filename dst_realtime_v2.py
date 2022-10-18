@@ -13,9 +13,7 @@ import os
 
 
 def get_realtime_dst(starttime,
-                     endtime,
-                     save_files:bool = False,
-                     save_plots:bool = False):
+                     endtime):
     
     
     working_directory = os.getcwd()
@@ -36,21 +34,30 @@ def get_realtime_dst(starttime,
     
     df_current = pd.read_html('https://wdc.kugi.kyoto-u.ac.jp/dst_realtime/index.html')
     
+    
+    #getting dates that we already heve a dst file in the database
+    
     dates_checked = check_dst_in_database(starttime,
-                                  endtime)
+                                          endtime)
 
     dates = []
+    
     for i in dates_checked:
         dates += [pd.to_datetime(i)]
         
-    #cheking best available datatype for the period
-    dates += check_best_available_datatype(starttime,endtime)
+    #cheking best available datatype for the period, if exists, file will be replaced
+    
+    dates += check_best_available_datatype(starttime, endtime)
     
     
     #cheking if endtime is greater than current month, this way current month will always be updated
     if pd.to_datetime(endtime) >= datem:
         dates += [pd.to_datetime(datem)]
-        
+    
+    #avoiding duplicate dates    
+    dates = list(set(dates))  
+    
+    #sorting dates  
     dates.sort()    
 
     if len(dates) != 0:    
@@ -64,20 +71,17 @@ def get_realtime_dst(starttime,
                 datatype = 'F'
                 html = f'https://wdc.kugi.kyoto-u.ac.jp/dst_final/{date.year}{str(date.month).zfill(2)}/index.html'   
                 url = requests.get(html).text
-                print(html)
                 
             elif int(date.year) > int(df_definitive[0].Year.values[-1]) and int(date.year) < int(df_current[0].Year.values[0]):
                 
                 datatype = 'P'
                 html = f'https://wdc.kugi.kyoto-u.ac.jp/dst_provisional/{date.year}{str(date.month).zfill(2)}/index.html'   
                 url = requests.get(html).text
-                #print(html)
                 
             else:
                 datatype = 'RT'
                 html = f'https://wdc.kugi.kyoto-u.ac.jp/dst_realtime/{date.year}{str(date.month).zfill(2)}/index.html'   
-                url = requests.get(html).text
-                #print(html)                
+                url = requests.get(html).text                
                 
         
             soup = BeautifulSoup(url, "html.parser")
@@ -96,6 +100,7 @@ def get_realtime_dst(starttime,
                 today = datetime.datetime.today().date()
                 days_in_month = monthrange(today.year, today.month)[1]
                 
+                #reading tmp dst file to sctructure the data
                 df = pd.read_csv(f'dst_{today.year}_{today.month}_realtime.txt',
                              skiprows = 8,
                              header = None,
@@ -119,6 +124,7 @@ def get_realtime_dst(starttime,
                     
                 daily_index = []
                 values = []
+                
                 for i,j in zip(df.index, range(len(df.index))):
                     values.extend(df.iloc[j].values)
                     for col in df.columns:
@@ -148,8 +154,9 @@ def get_realtime_dst(starttime,
                     lines = f.readlines()
                  
                 n = 4
-                comp_day = []
+                comp_day = [] #list with dst values for the day
                 for line in range(len(lines)):
+                    #removing additional spaces from lines
                     lines[line] = lines[line][3:35] + lines[line][36:68] + lines[line][69:101]
                     
                     comp_day += [lines[line][i:i+n] for i in range(0, len(lines[line]), n)] 
@@ -220,7 +227,7 @@ def get_realtime_dst(starttime,
                                                         f'dst_{year}.txt'),
                                                         sep = '\t',
                                                         encoding='ascii')
-        #deleting files
+        #deleting tmp files
         for date in dates:
             
             os.remove(f'dst_{date.year}_{str(date.month).zfill(2)}_realtime.txt')
@@ -303,8 +310,7 @@ def check_dst_in_database(starttime,
     #df_dst = df_dst.resample('M').mean()
         
     return missing_date 
-   
-   
+      
 def update_datatype_periods():
     '''
     Function to updated start e end data of each
@@ -392,7 +398,7 @@ def check_best_available_datatype(starttime,
             
     if df_final.empty == True:
         
-        return 
+        return []
     else:
         
         df_datatype = pd.read_csv(os.path.join(working_directory,
@@ -474,13 +480,19 @@ def plot_dst_index(starttime,
         df_dst = df_dst.loc[starttime:endtime]
         
         plt.figure(figsize=(12,4))
-        plt.plot(df_dst.Values)  
+        plt.title('Dst index')
+        plt.xlim(df_dst.index[0], df_dst.index[-1])
+        plt.plot(df_dst.Values)
+        plt.xlabel('Date')
+        plt.axhline(-50, ls =  '--', color ='black')
+        plt.grid(alpha = 0.3)
+        plt.ylabel('nT')  
         plt.show()        
   
   
 if __name__ == '__main__':
     
-    #df = get_realtime_dst(starttime= '2021-01-01',
+    #df = get_realtime_dst(starttime= '2022-10-01',
     #                      endtime = '2022-10-30')    
     #dates = check_dst_in_database(starttime = '2022-10-01',
     #                           endtime = '2022-10-30')
