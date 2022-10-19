@@ -1,6 +1,5 @@
 
 import pandas as pd
-import urllib.request
 import requests
 import datetime
 import numpy as np
@@ -10,14 +9,21 @@ import matplotlib.pyplot as plt
 import requests
 from bs4 import BeautifulSoup
 import os
-
+import pathlib
 
 def get_realtime_dst(starttime,
                      endtime):
+    '''
     
+    '''
+    #validating input format
+    for i in [starttime, endtime]:
+        validate_date_input(i)
+           
     
     working_directory = os.getcwd()
     
+    pathlib.Path(os.path.join(working_directory, 'dst_yearly_files')).mkdir(parents = True, exist_ok = True) 
     #dates = pd.date_range(np.datetime64(starttime),
     #                      np.datetime64(endtime) +1,
     #                      freq = 'M')
@@ -35,18 +41,19 @@ def get_realtime_dst(starttime,
     df_current = pd.read_html('https://wdc.kugi.kyoto-u.ac.jp/dst_realtime/index.html')
     
     
-    #getting dates that we already heve a dst file in the database
+    #getting dates that we already heve a dst file in the database 
     
     dates_checked = check_dst_in_database(starttime,
                                           endtime)
-
+    
+    
     dates = []
     
     for i in dates_checked:
         dates += [pd.to_datetime(i)]
         
     #cheking best available datatype for the period, if exists, file will be replaced
-    
+
     dates += check_best_available_datatype(starttime, endtime)
     
     
@@ -57,9 +64,13 @@ def get_realtime_dst(starttime,
     #avoiding duplicate dates    
     dates = list(set(dates))  
     
+    for date in dates:
+        if pd.to_datetime(date) > datem:
+            dates.remove(date)
+    
     #sorting dates  
-    dates.sort()    
-
+    dates.sort()
+    
     if len(dates) != 0:    
         for date in dates:
         
@@ -192,9 +203,11 @@ def get_realtime_dst(starttime,
                 #df_dst = df_dst.shift(-1, freq = 'H')
                 
                 df_final = pd.concat([df_final, df_dst])
+                #print(df_final, 'df_final')
         
         #concat current month with other months        
         if datetime.datetime(date.year, date.month, date.day) >= datem:
+            
             
             df_final = pd.concat([df_final, df_dst_current.dropna()])
             
@@ -204,9 +217,10 @@ def get_realtime_dst(starttime,
         for i in dates:
             years += [i.year]
             
-        years = list(set(years))       
-        for year in years:
+        years = list(set(years))   
             
+        for year in years:
+            #if file exist, reading from database
             if os.path.isfile(os.path.join(working_directory,
                                            'dst_yearly_files',
                                            f'dst_{year}.txt')) == True:
@@ -219,38 +233,49 @@ def get_realtime_dst(starttime,
                                  index_col= [0]
                                  )
                 df.index = pd.to_datetime(df.index, format = '%Y-%m-%d %H:%M:%S')
+                
             
                 df_final = pd.concat([df, df_final]).sort_index()
+                
                 df_final = df_final[~df_final.index.duplicated(keep='last')]
-              
-            df_final.loc[str(year)].replace(9999, np.nan).dropna().to_csv(os.path.join(f'dst_yearly_files',
-                                                        f'dst_{year}.txt'),
-                                                        sep = '\t',
-                                                        encoding='ascii')
+        
+                  
+            df_final.loc[str(year)].replace(9999, np.nan).dropna().to_csv(os.path.join(working_directory,
+                                                                                       f'dst_yearly_files',
+                                                                                       f'dst_{year}.txt'
+                                                                                       ),
+                                                                              sep = '\t',
+                                                                              encoding='ascii')
         #deleting tmp files
         for date in dates:
+            if os.path.isfile(os.path.join(working_directory,
+                                           f'dst_{date.year}_{str(date.month).zfill(2)}_realtime.txt'
+                                           )
+                              ) == True:
+                
+                os.remove(f'dst_{date.year}_{str(date.month).zfill(2)}_realtime.txt')
             
-            os.remove(f'dst_{date.year}_{str(date.month).zfill(2)}_realtime.txt')
-    else:
-        dates = pd.date_range(str(starttime),
-                              str(endtime),
-                              freq = 'M'
-                              )
-        for year in dates.year.drop_duplicates():
-            
-            df = pd.read_csv(os.path.join(working_directory,
-                                          'dst_yearly_files',
-                                          f'dst_{str(year)}.txt'
-                                          ),
-                             sep = '\t',
-                             index_col= [0]
-                             )
-            df.index = pd.to_datetime(df.index, format = '%Y-%m-%d %H:%M:%S')
-            
-            df_final = pd.concat([df, df_final]).sort_index()
-            df_final = df_final[~df_final.index.duplicated(keep='last')]
-                 
         
+
+    dates = pd.date_range(str(starttime),
+                      str(endtime),
+                      freq = 'M'
+                      )
+    for year in dates.year.drop_duplicates():
+        
+        df = pd.read_csv(os.path.join(working_directory,
+                                      'dst_yearly_files',
+                                      f'dst_{str(year)}.txt'
+                                      ),
+                         sep = '\t',
+                         index_col= [0]
+                         )
+        df.index = pd.to_datetime(df.index, format = '%Y-%m-%d %H:%M:%S')
+        
+        df_final = pd.concat([df, df_final]).sort_index()
+        df_final = df_final[~df_final.index.duplicated(keep='last')]
+             
+    
     return df_final.loc[starttime:endtime]
 
 def check_dst_in_database(starttime,
@@ -260,11 +285,17 @@ def check_dst_in_database(starttime,
     check existence of dst files in database
     
     for the selected period
+    
+    return dates where we don't have data in database
     '''
     
+    for i in [starttime, endtime]:
+        validate_date_input(i)
+        
     working_directory = os.getcwd()
     
     years_without_files = []
+    
     
     time_interval = pd.date_range(starttime,
                                   f'{endtime} 23:00:00' ,
@@ -287,12 +318,11 @@ def check_dst_in_database(starttime,
             
             df_dst = pd.concat([df_dst, df])
         else:
-            years_without_files + [years]
+            years_without_files += [years]
             dates_without_files = []
             for year in years_without_files:
                 for month in range(1,13):
-                    dates_without_files += [f'{year}-{str(month).zfill(2)}'] 
-            
+                    dates_without_files += [f'{year}-{str(month).zfill(2)}']       
     #dates_not_in_database = []
     missing_date = []
     if not df_dst.empty:  
@@ -304,11 +334,15 @@ def check_dst_in_database(starttime,
                 missing_date = list(set(missing_date))
         missing_date += years_without_files
     else:
-        missing_date == years_without_files
-    missing_date.sort()
-            
-    #df_dst = df_dst.resample('M').mean()
-        
+        missing_date = dates_without_files
+    #    for year in years_without_files:
+    #        for month in range(1,13):
+    #            
+    #            missing_date = years_without_files
+    
+    #missing_date.sort()
+      
+    #df_dst = df_dst.resample('M').mean()    
     return missing_date 
       
 def update_datatype_periods():
@@ -319,6 +353,7 @@ def update_datatype_periods():
     '''
      
     working_directory = os.getcwd()
+    
        
     df_datatype = pd.DataFrame()
     
@@ -357,6 +392,7 @@ def update_datatype_periods():
                                     'datatype_intervals.txt'),
                        sep = ',',
                        index = False)
+    return
 
 def check_best_available_datatype(starttime,
                                   endtime):
@@ -366,9 +402,12 @@ def check_best_available_datatype(starttime,
     availability for the selected period
     '''
     
-    update_datatype_periods()
-    
+    for i in [starttime, endtime]:
+        validate_date_input(i)
+        
     working_directory = os.getcwd()
+       
+    update_datatype_periods()
     
     date_interval = pd.date_range(starttime, endtime, freq = 'M') 
     
@@ -449,6 +488,17 @@ def check_best_available_datatype(starttime,
 def plot_dst_index(starttime,
                    endtime):
     
+    """
+    Function to plot the dst index for a given interval
+    
+    Only consider data in the dst database
+    
+    Use get_realtime_dst function if you don't have a database yet 
+    """
+    
+    for i in [starttime, endtime]:
+        validate_date_input(i)
+    
     time_interval = pd.date_range(starttime,
                                   f'{endtime} 23:00:00' ,
                                   freq = 'H')
@@ -489,17 +539,29 @@ def plot_dst_index(starttime,
         plt.ylabel('nT')  
         plt.show()        
   
+def validate_date_input(str_date):
+    """
+    Function to validate input format "YYYY-MM-DD"
+    
+    """
+    try:
+        datetime.datetime.strptime(str_date, '%Y-%m-%d')
+    except ValueError:
+        raise ValueError('Incorrect date format, should be YYYY-MM-DD')
+ 
   
 if __name__ == '__main__':
     
-    #df = get_realtime_dst(starttime= '2022-10-01',
-    #                      endtime = '2022-10-30')    
-    #dates = check_dst_in_database(starttime = '2022-10-01',
+    df = get_realtime_dst(starttime= '1957-01-01',
+                          endtime = '2022-10-18')
+    print(df)    
+    #dates = check_dst_in_database(starttime = '2020-01-01',
     #                           endtime = '2022-10-30')
-    #
+    #print(dates)
+
     #update_datatype_periods()
     
     #df = check_best_available_datatype('2021-06-01','2022-12-31')
     #print(df)
     
-    plot_dst_index(starttime = '2022-10', endtime = '2022-10')
+    #plot_dst_index(starttime = '1957-10-15', endtime = '2022-10-18')
